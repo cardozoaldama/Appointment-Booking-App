@@ -4,20 +4,24 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appointmentbookingapp.domain.model.Review
+import com.example.appointmentbookingapp.domain.model.User
 import com.example.appointmentbookingapp.domain.repository.ReviewRepository
 import com.example.appointmentbookingapp.presentation.state.UiState
 import com.example.appointmentbookingapp.util.Resource
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
     private val reviewRepository: ReviewRepository,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     private val _submitState = MutableStateFlow<UiState<Unit>>(UiState.Initial)
@@ -42,11 +46,24 @@ class ReviewViewModel @Inject constructor(
             _submitState.value = UiState.Loading
 
             val currentUserId = firebaseAuth.currentUser?.uid
-            val currentUserName = firebaseAuth.currentUser?.displayName ?: "Anonymous"
 
             if (currentUserId == null) {
                 _submitState.value = UiState.Error("User not authenticated")
                 return@launch
+            }
+
+            // Fetch user's name from Firestore
+            val currentUserName = try {
+                val userSnapshot = firestore.collection("users")
+                    .document(currentUserId)
+                    .get()
+                    .await()
+
+                val user = userSnapshot.toObject(User::class.java)
+                user?.name ?: "Anonymous"
+            } catch (e: Exception) {
+                Log.e("ReviewViewModel", "Failed to fetch user name: ${e.message}")
+                "Anonymous"
             }
 
             // Check if user has existing review

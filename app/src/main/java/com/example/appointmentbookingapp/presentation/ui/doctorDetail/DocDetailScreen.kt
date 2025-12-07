@@ -29,6 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -91,17 +93,24 @@ fun DocDetailScreen(
     val submitState by reviewViewModel.submitState.collectAsState()
 
     var showRatingDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentDoctor.id) {
         favoriteViewModel.checkIfFavorite(currentDoctor.id)
         reviewViewModel.loadExistingReview(currentDoctor.id)
     }
 
-    // Handle review submission success
+    // Handle review submission state
     LaunchedEffect(submitState) {
         when (submitState) {
             is UiState.Success -> {
                 showRatingDialog = false
+                reviewViewModel.resetSubmitState()
+                snackbarHostState.showSnackbar("Review submitted successfully!")
+            }
+            is UiState.Error -> {
+                val errorMessage = (submitState as UiState.Error).message
+                snackbarHostState.showSnackbar("Failed to submit review: $errorMessage")
                 reviewViewModel.resetSubmitState()
             }
             else -> {}
@@ -110,6 +119,7 @@ fun DocDetailScreen(
 
     Scaffold(
         Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
