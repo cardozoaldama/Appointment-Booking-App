@@ -7,6 +7,7 @@ import com.example.appointmentbookingapp.data.remorte.ChatRemoteDataSource
 import com.example.appointmentbookingapp.data.remorte.FavoritesRemoteDataSource
 import com.example.appointmentbookingapp.data.remorte.HomeRemoteDataSource
 import com.example.appointmentbookingapp.data.remorte.ProfileRemoteDataSource
+import com.example.appointmentbookingapp.data.remorte.ReviewRemoteDataSource
 import com.example.appointmentbookingapp.data.repository.AppointmentRepositoryImpl
 import com.example.appointmentbookingapp.data.repository.AuthRepositoryImpl
 import com.example.appointmentbookingapp.data.repository.CallRepositoryImpl
@@ -14,6 +15,7 @@ import com.example.appointmentbookingapp.data.repository.ChatRepositoryImpl
 import com.example.appointmentbookingapp.data.repository.FavoriteRepositoryImpl
 import com.example.appointmentbookingapp.data.repository.HomeRepositoryImpl
 import com.example.appointmentbookingapp.data.repository.ProfileRepositoryImp
+import com.example.appointmentbookingapp.data.repository.ReviewRepositoryImpl
 import com.example.appointmentbookingapp.domain.repository.AppointmentRepository
 import com.example.appointmentbookingapp.domain.repository.AuthRepository
 import com.example.appointmentbookingapp.domain.repository.CallRepository
@@ -21,6 +23,7 @@ import com.example.appointmentbookingapp.domain.repository.ChatRepository
 import com.example.appointmentbookingapp.domain.repository.FavoriteRepository
 import com.example.appointmentbookingapp.domain.repository.HomeRepository
 import com.example.appointmentbookingapp.domain.repository.ProfileRepository
+import com.example.appointmentbookingapp.domain.repository.ReviewRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
@@ -90,6 +93,12 @@ object AppModule {
     fun provideCallRepository(callRemoteDataSource: CallRemoteDataSource): CallRepository {
         return CallRepositoryImpl(callRemoteDataSource)
 
+    }
+
+    @Singleton
+    @Provides
+    fun provideReviewRepository(remote: ReviewRemoteDataSource): ReviewRepository {
+        return ReviewRepositoryImpl(remote)
     }
 
 
