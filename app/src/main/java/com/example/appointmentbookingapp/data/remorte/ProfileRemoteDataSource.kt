@@ -26,8 +26,6 @@ class ProfileRemoteDataSource @Inject constructor(
         return firebaseAuth.currentUser?.email
     }
 
-    suspend fun getCurrentUserData(): User? {
-        Log.d(logTag, "getCurrentUserData called")
     suspend fun getCurrentUserRole(): String? {
         Log.d(logTag, "getCurrentUserRole called")
         val userId = getCurrentUserId() ?: return null

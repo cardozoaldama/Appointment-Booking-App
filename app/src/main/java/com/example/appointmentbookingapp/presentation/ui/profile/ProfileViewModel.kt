@@ -39,7 +39,8 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun getCurrentUserPhoto()= viewModelScope.launch {
-        _photoUrl.value = profileRepository.getCurrentUserData()?.profileUrl
+        // TODO: Implement getCurrentUserData() to fetch user profile photo
+        _photoUrl.value = null
     }
 
     fun logOut() = profileRepository.logOut()

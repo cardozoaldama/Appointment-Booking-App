@@ -29,12 +29,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,8 +62,11 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.example.appointmentbookingapp.R
 import com.example.appointmentbookingapp.domain.model.DoctorItem
+import com.example.appointmentbookingapp.presentation.state.UiState
+import com.example.appointmentbookingapp.presentation.ui.components.RatingDialog
 import com.example.appointmentbookingapp.presentation.ui.favorite.viewModel.FavoriteViewModel
 import com.example.appointmentbookingapp.presentation.ui.home.viewModel.SharedDoctorViewModel
+import com.example.appointmentbookingapp.presentation.ui.review.viewModel.ReviewViewModel
 import com.example.appointmentbookingapp.presentation.ui.sharedviewmodel.DoctorChatSharedViewModel
 
 
@@ -69,6 +77,7 @@ fun DocDetailScreen(
     sharedDoctorViewModel: SharedDoctorViewModel = viewModel(),
     favoriteViewModel: FavoriteViewModel = hiltViewModel(),
     doctorChatSharedViewModel: DoctorChatSharedViewModel = hiltViewModel(),
+    reviewViewModel: ReviewViewModel = hiltViewModel(),
 ) {
 
     val currentDoctor by sharedDoctorViewModel.selectedDoctor.collectAsState()
@@ -80,13 +89,37 @@ fun DocDetailScreen(
 //    }
 
     val isFavorite by favoriteViewModel.isFavorite.collectAsState()
+    val existingReview by reviewViewModel.existingReview.collectAsState()
+    val submitState by reviewViewModel.submitState.collectAsState()
+
+    var showRatingDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentDoctor.id) {
         favoriteViewModel.checkIfFavorite(currentDoctor.id)
+        reviewViewModel.loadExistingReview(currentDoctor.id)
+    }
+
+    // Handle review submission state
+    LaunchedEffect(submitState) {
+        when (submitState) {
+            is UiState.Success -> {
+                showRatingDialog = false
+                reviewViewModel.resetSubmitState()
+                snackbarHostState.showSnackbar("Review submitted successfully!")
+            }
+            is UiState.Error -> {
+                val errorMessage = (submitState as UiState.Error).message
+                snackbarHostState.showSnackbar("Failed to submit review: $errorMessage")
+                reviewViewModel.resetSubmitState()
+            }
+            else -> {}
+        }
     }
 
     Scaffold(
         Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -172,11 +205,35 @@ fun DocDetailScreen(
         {
             TopCardSection(currentDoctor)
             Spacer(Modifier.height(24.dp))
-            TabBarSection(currentDoctor)
+            TabBarSection(
+                currentDoctor = currentDoctor,
+                onReviewsClick = { showRatingDialog = true }
+            )
             Spacer(Modifier.height(24.dp))
             AboutMeSection(currentDoctor)
             Spacer(Modifier.height(24.dp))
             SpokenLanguageSection(currentDoctor)
+        }
+
+        // Rating Dialog
+        if (showRatingDialog) {
+            RatingDialog(
+                doctorName = currentDoctor.name,
+                existingRating = existingReview?.rating ?: 0.0,
+                existingComment = existingReview?.comment ?: "",
+                onDismiss = {
+                    showRatingDialog = false
+                    reviewViewModel.resetSubmitState()
+                },
+                onSubmit = { rating, comment ->
+                    reviewViewModel.submitReview(
+                        doctorId = currentDoctor.id,
+                        doctorName = currentDoctor.name,
+                        rating = rating,
+                        comment = comment
+                    )
+                }
+            )
         }
     }
 }
@@ -253,7 +310,10 @@ fun TopCardSection(currentDoctor: DoctorItem) {
 }
 
 @Composable
-fun TabBarSection(currentDoctor: DoctorItem) {
+fun TabBarSection(
+    currentDoctor: DoctorItem,
+    onReviewsClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
@@ -282,7 +342,8 @@ fun TabBarSection(currentDoctor: DoctorItem) {
 
         ItemWithIcon(
             imageResId = R.drawable.feedback,
-            text = "${currentDoctor.reviewsCount}\nReviews"
+            text = "${currentDoctor.reviewsCount}\nReviews",
+            onClick = onReviewsClick
         )
     }
 }
@@ -291,11 +352,19 @@ fun TabBarSection(currentDoctor: DoctorItem) {
 fun ItemWithIcon(
     icon: ImageVector? = null,
     imageResId: Int? = null,
-    text: String
+    text: String,
+    onClick: (() -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.then(
+            if (onClick != null) {
+                Modifier.clickable { onClick() }
+            } else {
+                Modifier
+            }
+        )
     ) {
         Box(
             Modifier

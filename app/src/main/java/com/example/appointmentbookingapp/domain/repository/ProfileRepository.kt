@@ -10,7 +10,6 @@ interface ProfileRepository {
     fun getCurrentUserName(): String?
     fun getCurrentEmail(): String?
     suspend fun getCurrentUserRole(): String?
-    suspend fun getCurrentUserData(): User?
     fun isUserLoggedIn(): Boolean
     fun logOut()
 
