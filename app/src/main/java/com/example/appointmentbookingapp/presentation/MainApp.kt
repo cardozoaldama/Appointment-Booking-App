@@ -32,7 +32,6 @@ import com.example.appointmentbookingapp.presentation.ui.chat.ChatScreen
 import com.example.appointmentbookingapp.presentation.ui.chat.ChatViewModel
 import com.example.appointmentbookingapp.presentation.ui.doctorDetail.DocDetailScreen
 import com.example.appointmentbookingapp.presentation.ui.doctorHome.DoctorHomeScreen
-import com.example.appointmentbookingapp.presentation.ui.doctorHome.DoctorHomeScreenn
 import com.example.appointmentbookingapp.presentation.ui.favorite.FavoriteScreen
 import com.example.appointmentbookingapp.presentation.ui.favorite.viewModel.FavoriteViewModel
 import com.example.appointmentbookingapp.presentation.ui.home.HomeScreen
@@ -168,7 +167,7 @@ fun MainApp(startDestination: String) {
                 CompleteProfileScreen(navController, authViewModel, roleSharedViewModel)
             }
             composable("DoctorHomeScreenn") {
-                DoctorHomeScreenn(navController)
+                DoctorHomeScreen(navController)
             }
             composable("CallScreen") {
                 CallScreen(
